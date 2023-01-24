@@ -1,0 +1,67 @@
+---
+title: "Cincinnati Meal Gap"
+format: html
+---
+
+```{r}
+#| echo: false
+#| message: false
+library(tidyverse)
+library(ggiraph)
+
+dat <- read_csv('output/monthly_all_sources_.csv')
+
+d <- dat |> 
+  filter(SNA_NAME %in% c('Avondale', 'East Price Hill', 'West Price Hill')) |> 
+  select(neighborhood = 'SNA_NAME', month, year, contains('covered')) |> 
+  mutate(month = as.numeric(month)) |> 
+  mutate(month_abbr = month.abb[month])
+
+d$date <- as.Date(paste(d$year, d$month, 1, sep = "-"))
+
+d <- d |> 
+  pivot_longer(cols = contains('covered'), names_to = 'source', values_to = 'pct_covered') |> 
+  filter(source != 'charitable_percent_covered')
+
+```
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 7
+
+
+d$source <- factor(d$source, levels = c("meal_percent_income_covered",
+                                        "meal_percent_snap_covered",
+                                        "meal_percent_cps_covered",
+                                        "meal_percent_fsb_covered",
+                                        "meal_percent_lasoupe_covered",
+                                        "meal_percent_whole_again_covered"),
+                   labels = c("Income Covered",
+                              "SNAP Covered",
+                              "CPS Covered",
+                              "Free Store Foodbank Covered",
+                              "La Soupe Covered",
+                              "Whole Again Covered"))
+
+meal_gap_plot <- ggplot(d, aes(fill = source, y = pct_covered, x = date)) +
+  geom_bar_interactive(position = "stack", stat = "identity",
+                       aes(data_id = neighborhood,
+                           tooltip = paste0(source, "<br>", 
+                                            month_abbr, "-", year, "<br>",
+                                            round(pct_covered,1), "%"))) +
+  theme_minimal() +
+  ggsci::scale_fill_nejm() +
+  labs(x = "Date", y = "Percent Covered", fill = "Meal Source") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_date(date_breaks = "6 months", date_labels = "%m-%Y") +
+  facet_wrap(~neighborhood, nrow = 3)
+
+girafe(ggobj = meal_gap_plot, width_svg = 10, height_svg = 7,
+                        options = list(opts_hover(css = "stroke-width:5;"),
+                                      opts_hover_inv(css = "opacity:0.2;"),
+                                      opts_zoom(max = 5)))
+
+
+```
+
