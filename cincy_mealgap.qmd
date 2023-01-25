@@ -46,21 +46,17 @@ d$source <- factor(d$source, levels = c("meal_percent_income_covered",
                               "La Soupe",
                               "Whole Again"))
 
-meal_gap_plot <- ggplot(d, aes(fill = source, y = pct_covered, x = date)) +
+
+meal_gap_plot <- ggplot(d) +
   geom_hline(yintercept = 1, linewidth = .5, alpha = .5) +
-  geom_bar_interactive(position = "stack", stat = "identity",
-                       aes(data_id = neighborhood,
+  geom_bar_interactive(position = position_stack(reverse = TRUE), stat = "identity",
+                       aes(fill = source, y = pct_covered, x = date,
+                         data_id = neighborhood,
                            tooltip = paste0(source, "<br>", 
                                             month_abbr, " ", year, "<br>",
                                             round(pct_covered,1)*100, "%"))) +
   theme_minimal() +
-  ggsci::scale_fill_jama(breaks = c(
-    "SNAP",
-    "Income",
-    "CPS",
-    "Free Store Foodbank",
-    "La Soupe",
-    "Whole Again")) +
+  ggsci::scale_fill_jama() +
   labs(x = "", y = "Meal Coverage (% Meals Covered)", fill = "Meal Source") +
   scale_y_continuous(labels = scales::percent) +
   scale_x_date(date_breaks = "6 months", date_labels = "%b %Y") +
