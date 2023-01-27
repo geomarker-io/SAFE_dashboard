@@ -11,14 +11,15 @@ format:
 library(tidyverse)
 library(ggiraph)
 
-dat <- read_csv('output/monthly_all_sources_.csv')
+dat <- read_csv('output/monthly_all_sources_2_.csv')
 
 d <- dat |> 
   filter(SNA_NAME %in% c('Avondale', 'East Price Hill', 'West Price Hill', 
                          'Mt. Lookout', 'Villages at Roll Hill')) |> 
-  select(neighborhood = 'SNA_NAME', month, year, contains('covered')) |> 
+  dplyr::select(neighborhood = 'SNA_NAME', month, year, contains('covered')) |> 
   mutate(month = as.numeric(month)) |> 
-  mutate(month_abbr = month.abb[month])
+  mutate(month_abbr = month.abb[month]) |> 
+  distinct(neighborhood, year, month, .keep_all = T)
 
 d$date <- as.Date(paste(d$year, d$month, 1, sep = "-"))
 
@@ -82,7 +83,7 @@ girafe(ggobj = meal_gap_plot, width_svg = 10, height_svg = 14,
 #| echo: false
 #| fig-width: 10
 #| fig-height: 7
-#| fig-cap: Points appearing in the green section, with values less than zero, indicate a meal surplus for that month
+#| fig-cap: Points appearing in the green section, with values greater than zero, indicate a meal surplus for that month
 
 d_2 <- d |> 
   pivot_wider(names_from = 'source', values_from = 'pct_covered') |> 
