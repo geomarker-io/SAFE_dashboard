@@ -1,5 +1,5 @@
 ---
-title: "Cincinnati Meal Gap"
+title: "Cincinnati Meal Gap (DRAFT)"
 format:
   html:
     page-layout: full
@@ -14,7 +14,8 @@ library(ggiraph)
 dat <- read_csv('output/monthly_all_sources_.csv')
 
 d <- dat |> 
-  filter(SNA_NAME %in% c('Avondale', 'East Price Hill', 'West Price Hill')) |> 
+  filter(SNA_NAME %in% c('Avondale', 'East Price Hill', 'West Price Hill', 
+                         'Mt. Lookout', 'Villages at Roll Hill')) |> 
   select(neighborhood = 'SNA_NAME', month, year, contains('covered')) |> 
   mutate(month = as.numeric(month)) |> 
   mutate(month_abbr = month.abb[month])
@@ -27,10 +28,12 @@ d <- d |>
 
 ```
 
+- The meal gap calculation is a measure aimed at deciphering where people may be coming up short on having enough meals. We believe the 4 main sources of meals are personal income, governmental assistance (SNAP), free school lunches (Cincinnati Public Schools[CPS]) and non-profits. In these charts we are estimating how much each source provides to a community and then examining where and when there may not be enough meals.
+
 ```{r}
 #| echo: false
 #| fig-width: 10
-#| fig-height: 7
+#| fig-height: 14
 
 
 d$source <- factor(d$source, levels = c("meal_percent_income_covered",
@@ -54,16 +57,16 @@ meal_gap_plot <- ggplot(d) +
                          data_id = neighborhood,
                            tooltip = paste0(source, "<br>", 
                                             month_abbr, " ", year, "<br>",
-                                            round(pct_covered,1)*100, "%"))) +
+                                            round(pct_covered*100,1), "%"))) +
   theme_minimal() +
   ggsci::scale_fill_jama() +
   labs(x = "", y = "Meal Coverage (% Meals Covered)", fill = "Meal Source") +
   scale_y_continuous(labels = scales::percent) +
   scale_x_date(date_breaks = "6 months", date_labels = "%b %Y") +
   #ggeasy::easy_move_legend("top") +
-  facet_wrap(~neighborhood, nrow = 3)
+  facet_wrap(~neighborhood, nrow = 5)
 
-girafe(ggobj = meal_gap_plot, width_svg = 10, height_svg = 7,
+girafe(ggobj = meal_gap_plot, width_svg = 10, height_svg = 14,
                         options = list(opts_hover(css = "stroke-width:5;"),
                                       opts_hover_inv(css = "opacity:0.2;"),
                                       opts_zoom(max = 5)))
@@ -80,26 +83,27 @@ girafe(ggobj = meal_gap_plot, width_svg = 10, height_svg = 7,
 d_2 <- d |> 
   pivot_wider(names_from = 'source', values_from = 'pct_covered') |> 
   rowwise() |> 
-  mutate(meal_gap = 1 - sum(Income, SNAP, CPS, `Free Store Foodbank`, `La Soupe`, `Whole Again`)) |> 
+  mutate(meal_gap = -1 * (1 - sum(Income, SNAP, CPS, `Free Store Foodbank`, `La Soupe`, `Whole Again`))) |> 
   ungroup()
 
 gap_over_time <- ggplot(d_2, aes(x = date, y = meal_gap, col = neighborhood)) +
   geom_line_interactive(aes(data_id = neighborhood, group = neighborhood)) +
   geom_point_interactive(#position = "dodge",
                        aes(data_id = neighborhood, group = neighborhood, 
-                            tooltip = paste(month_abbr, " ", year, "<br>",
+                            tooltip = paste(neighborhood, "<br>",
+                                            month_abbr, " ", year, "<br>",
                                             round(meal_gap,2)*100, "%"))) +
   geom_hline(yintercept = 0, linewidth = .5) +
-  scale_y_reverse(labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent) +
   theme_minimal() +
   ggsci::scale_color_aaas() +
   labs(x = "", y = "Meal Gap (% Meals Short)", col = "Neighborhood") +
   scale_x_date(date_breaks = "6 months", date_labels = "%b %Y") +
   #ggeasy::easy_move_legend("top") +
   annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = as.Date("2022-10-01", "%Y-%m-%d"),
-                ymin = -.06, ymax = -0.0001, fill = "forestgreen", alpha = .2) +
+                ymin = .06, ymax = 0.0001, fill = "forestgreen", alpha = .2) +
   annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = as.Date("2022-10-01", "%Y-%m-%d"),
-                ymin = 0.0001, ymax = .20, fill = "firebrick", alpha = .2) 
+                ymin = -0.0001, ymax = -.40, fill = "firebrick", alpha = .2) 
 
 girafe(ggobj = gap_over_time, width_svg = 10, height_svg = 7,
                         options = list(opts_hover(css = "stroke-width:5;"),
