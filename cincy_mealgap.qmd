@@ -28,7 +28,9 @@ d <- d |>
 
 ```
 
-- The meal gap calculation is a measure aimed at deciphering where people may be coming up short on having enough meals. We believe the 4 main sources of meals are personal income, governmental assistance (SNAP), free school lunches (Cincinnati Public Schools[CPS]) and non-profits. In these charts we are estimating how much each source provides to a community and then examining where and when there may not be enough meals.
+- The meal gap calculation is aimed at examining where people may not have enough to eat. We believe the 4 main sources of meals are personal income, governmental assistance (SNAP), free school lunches (Cincinnati Public Schools[CPS]) and non-profits. In these charts we are estimating how much meal coverage each source provides to a community and when there may be a meal shortage.
+
+### Percent Meals Covered
 
 ```{r}
 #| echo: false
@@ -73,6 +75,8 @@ girafe(ggobj = meal_gap_plot, width_svg = 10, height_svg = 14,
 
 
 ```
+
+### Percent Meals Short
 
 ```{r}
 #| echo: false
