@@ -1,0 +1,217 @@
+library(tidyverse)
+library(shiny)
+library(ggiraph)
+library(bs4Dash)
+library(fresh)
+
+theme <- create_theme(
+  bs4dash_vars(
+    navbar_light_color = CB::cchmc_color(3)[[1]],
+    navbar_light_active_color = CB::cchmc_color(3)[[1]],
+    navbar_light_hover_color = "#FFF",
+    card_bg = "#FFF"
+  ),
+  bs4dash_yiq(
+    contrasted_threshold = 1,
+    text_dark = "#FFF",
+    text_light = "black"
+  ),
+  bs4dash_layout(
+    main_bg = CB::cchmc_color(4)[[1]]
+  ),
+  bs4dash_sidebar_light(
+    bg = CB::cchmc_color(1)[[1]],
+    header_color = CB::cchmc_color(1)[[1]]
+  ),
+  bs4dash_sidebar_dark(
+    bg = CB::cchmc_color(1)[[1]],
+    header_color = CB::cchmc_color(1)[[1]]
+  ),
+  bs4dash_status(
+    primary = CB::cchmc_color(2)[[1]],
+    success = CB::cchmc_color(3)[[1]],
+    info = CB::cchmc_color(4)[[1]],
+    light = CB::cchmc_color(1)[[1]],
+    dark = CB::cchmc_color(1)[[1]]
+  ),
+  bs4dash_color(
+    gray_900 = CB::cchmc_color(4)[[1]], white = dht::degauss_colors(4)
+  )
+)
+
+neighborhood_list <- read_csv('../output/monthly_all_sources_2_.csv') |>
+  distinct(SNA_NAME)
+
+ui <- dashboardPage(
+  preloader = list(html = tagList(waiter::spin_refresh(), "Loading ..."), color = CB::cchmc_color(1)[[1]]),
+  fullscreen = TRUE,
+  freshTheme = theme,
+  dark = NULL,
+
+  tags$head( tags$style(type="text/css", "text {font-family: sans-serif}")),
+
+  header = dashboardHeader(
+    title = dashboardBrand(
+      title = "SAFE Meal Gap Dashboard",
+      color = "primary"
+    ),
+    controlbarIcon = icon("circle-info")
+  ),
+
+  footer = dashboardFooter(
+    left = "SAFE Meal Gap Dashboard"
+  ),
+
+  controlbar = dashboardControlbar(
+    id = "controlbar",
+    controlbarMenu(
+      id = "controlmenu",
+      type = "pills")
+  ),
+
+  sidebar = dashboardSidebar(
+    id = "sidebar",
+    sidebarMenu(
+      id = "sidebarmenu",
+      menuItem(
+        text = "Meal Gap",
+        tabName = "meal_gap_tab",
+        icon = icon("utensils")
+        )
+      )
+  ),
+
+  body = dashboardBody(
+    tabItems(
+      tabItem("meal_gap_tab",
+              fluidRow(
+                box(title = "Meal Coverage",
+                    width = 12,
+                    status = "primary",
+                    girafeOutput('mealcoverage'),
+                    sidebar = boxSidebar(
+                      startOpen = TRUE,
+                      id = 'coversidebar',
+                      width = 33,
+                      selectizeInput(
+                        'neighborhood',
+                        choices = neighborhood_list$SNA_NAME,
+                        selected = c('Avondale', 'East Price Hill', 'West Price Hill', 'Lower Price Hill'),
+                        label = "Select Neighborhoods",
+                        multiple = TRUE,
+                        options = list(maxItems = 5)
+                      )
+                    )
+                )),
+              fluidRow(
+                box(title = "Meal Gap",
+                    width = 12,
+                    status = "primary",
+                    girafeOutput('mealgap'))
+              )
+      )
+    )
+  )
+)
+
+server <- function(input,output,session){
+
+  d <- reactive({
+    dat <- read_csv('../output/monthly_all_sources_2_.csv')
+
+    temp_d <- dat |>
+      filter(SNA_NAME %in% c(input$neighborhood)) |>
+      dplyr::select(neighborhood = 'SNA_NAME', month, year, contains('covered')) |>
+      mutate(month = as.numeric(month)) |>
+      mutate(month_abbr = month.abb[month]) |>
+      distinct(neighborhood, year, month, .keep_all = T)
+
+    temp_d$date <- as.Date(paste(temp_d$year, temp_d$month, 1, sep = "-"))
+
+    temp_d <- temp_d |>
+      pivot_longer(cols = contains('covered'), names_to = 'source', values_to = 'pct_covered') |>
+      filter(source != 'charitable_percent_covered')
+
+    temp_d$source <- factor(temp_d$source, levels = c("meal_percent_income_covered",
+                                                   "meal_percent_snap_covered",
+                                                   "meal_percent_cps_covered",
+                                                   "meal_percent_fsb_covered",
+                                                   "meal_percent_lasoupe_covered",
+                                                   "meal_percent_whole_again_covered"),
+                            labels = c("Income",
+                                       "SNAP",
+                                       "CPS",
+                                       "Free Store Foodbank",
+                                       "La Soupe",
+                                       "Whole Again"))
+
+    temp_d
+  })
+
+  output$mealcoverage <- renderGirafe({
+
+    meal_cover_plot <- ggplot(d()) +
+      geom_hline(yintercept = 1, linewidth = .5, alpha = .5) +
+      geom_bar_interactive(position = position_stack(reverse = TRUE), stat = "identity",
+                           aes(fill = source, y = pct_covered, x = date,
+                               data_id = neighborhood,
+                               tooltip = paste0(source, "<br>",
+                                                month_abbr, " ", year, "<br>",
+                                                round(pct_covered*100,1), "%"))) +
+      theme_minimal() +
+      ggsci::scale_fill_jama() +
+      labs(x = "", y = "Meal Coverage (% Meals Covered)", fill = "Meal Source") +
+      scale_y_continuous(labels = scales::percent) +
+      scale_x_date(date_breaks = "6 months", date_labels = "%b %Y") +
+      ggeasy::easy_rotate_x_labels(angle = -60) +
+      facet_wrap(~neighborhood, nrow = 1)
+
+    girafe(ggobj = meal_cover_plot, width_svg = ifelse(length(input$neighborhood) == 5, 24, 18),
+           options = list(opts_hover(css = "stroke-width:5;"),
+                          opts_hover_inv(css = "opacity:0.2;"),
+                          opts_sizing(rescale = TRUE, width = 1),
+                          opts_zoom(max = 5)))
+
+  })
+
+  output$mealgap <- renderGirafe({
+
+      d_2 <- reactive({
+        d() |>
+        pivot_wider(names_from = 'source', values_from = 'pct_covered') |>
+        rowwise() |>
+        mutate(meal_gap = -1 * (1 - sum(Income, SNAP, CPS, `Free Store Foodbank`, `La Soupe`, `Whole Again`))) |>
+        ungroup()
+    })
+
+    meal_gap_plot <- ggplot(d_2(), aes(x = date, y = meal_gap, col = neighborhood)) +
+      geom_line_interactive(aes(data_id = neighborhood, group = neighborhood)) +
+      geom_point_interactive(#position = "dodge",
+        aes(data_id = neighborhood, group = neighborhood,
+            tooltip = paste(neighborhood, "<br>",
+                            month_abbr, " ", year, "<br>",
+                            round(meal_gap,2)*100, "%"))) +
+      geom_hline(yintercept = 0, linewidth = .5) +
+      scale_y_continuous(labels = scales::percent) +
+      theme_minimal() +
+      ggsci::scale_color_aaas() +
+      labs(x = "", y = "Meal Gap (% Meals Short)", col = "Neighborhood") +
+      scale_x_date(date_breaks = "6 months", date_labels = "%b %Y") +
+      #ggeasy::easy_move_legend("top") +
+      annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = as.Date("2022-10-01", "%Y-%m-%d"),
+               ymin = .06, ymax = 0.0001, fill = "forestgreen", alpha = .2) +
+      annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = as.Date("2022-10-01", "%Y-%m-%d"),
+               ymin = -0.0001, ymax = -.40, fill = "firebrick", alpha = .2)
+
+    girafe(ggobj = meal_gap_plot, width_svg = 18,
+           options = list(opts_hover(css = "stroke-width:5;"),
+                          opts_hover_inv(css = "opacity:0.1;"),
+                          opts_zoom(max = 5)))
+  })
+
+}
+
+shinyApp(ui, server)
+
+
+
