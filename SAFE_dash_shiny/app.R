@@ -3,7 +3,9 @@ library(shiny)
 library(ggiraph)
 library(bs4Dash)
 library(fresh)
+library(cicerone)
 
+#theming
 theme <- create_theme(
   bs4dash_vars(
     navbar_light_color = CB::cchmc_color(3)[[1]],
@@ -39,6 +41,39 @@ theme <- create_theme(
   )
 )
 
+#guided tour---
+guide <- Cicerone$
+  new(allow_close = TRUE)$
+  step(
+    el = 'title_wrap',
+    "Tour of the SAFE Dashboard",
+    paste0("This is a guided tour of the SAFE Dashboard. You can close this now or continue with the tour. In the menu on the right side of the page (",icon("circle-info"),") is a button to restart this tutorial.")
+  )$
+  step(
+    el = 'mealcoverage',
+    "Meal Coverage Plot",
+    "This panel displays the monthly meal coverage for the selected neighborhoods. Hover over a meal source to compare it across neighborhoods.",
+  )$
+  step(
+    el = 'coversidebar',
+    "Select Neighborhoods",
+    "Click this button to add/remove neighborhoods from both plots",
+    position = "left"
+    )$
+  step(
+    el = 'mealgap',
+    "Meal Gap Plot",
+    "This panel displays the monthly meal gap for the selected neighborhoods. Hover over a line to highlight that neighborhood. Neighborhoods are selected in the above box.",
+  )$
+  step(
+    el = "control_wrap",
+    "More Information",
+    "Click this button to view disclaimers or restart this tour.",
+    position = "left"
+  )
+
+
+#get neighborhood list
 neighborhood_list <- read_csv('../output/monthly_all_sources_2_.csv') |>
   distinct(SNA_NAME)
 
@@ -48,14 +83,18 @@ ui <- dashboardPage(
   freshTheme = theme,
   dark = NULL,
 
+  use_cicerone(),
+
   tags$head( tags$style(type="text/css", "text {font-family: sans-serif}")),
 
   header = dashboardHeader(
-    title = dashboardBrand(
+    title = div(
+      id = "title_wrap",
+      dashboardBrand(
       title = "SAFE Meal Gap Dashboard",
-      color = "primary"
+      color = "primary")
     ),
-    controlbarIcon = icon("circle-info")
+    controlbarIcon = div(id = "control_wrap", icon("circle-info"))
   ),
 
   footer = dashboardFooter(
@@ -63,10 +102,18 @@ ui <- dashboardPage(
   ),
 
   controlbar = dashboardControlbar(
-    id = "controlbar",
+    id = "my_controlbar",
     controlbarMenu(
       id = "controlmenu",
-      type = "pills")
+      type = "tabs",
+      controlbarItem(
+        title = "Disclaimers:",
+        column(width = 12,
+               p("i). We acknowledge that ACS Census data is limited and may not be completely representative of the population in all situations."),
+               p("ii). Second disclaimer"),
+               actionButton("guide_btn", "Restart Guide"))
+      )
+    )
   ),
 
   sidebar = dashboardSidebar(
@@ -81,27 +128,28 @@ ui <- dashboardPage(
       )
   ),
 
-  body = dashboardBody(
+    body = dashboardBody(
     tabItems(
       tabItem("meal_gap_tab",
               fluidRow(
-                box(title = "Meal Coverage",
-                    width = 12,
-                    status = "primary",
-                    girafeOutput('mealcoverage'),
-                    sidebar = boxSidebar(
-                      startOpen = TRUE,
-                      id = 'coversidebar',
-                      width = 33,
-                      selectizeInput(
-                        'neighborhood',
-                        choices = neighborhood_list$SNA_NAME,
-                        selected = c('Avondale', 'East Price Hill', 'West Price Hill', 'Lower Price Hill'),
-                        label = "Select Neighborhoods",
-                        multiple = TRUE,
-                        options = list(maxItems = 5)
-                      )
+                box(
+                  title = "Meal Coverage",
+                  width = 12,
+                  status = "primary",
+                  girafeOutput('mealcoverage'),
+                  sidebar = boxSidebar(
+                    startOpen = TRUE,
+                    id = 'coversidebar',
+                    width = 33,
+                    selectizeInput(
+                      'neighborhood',
+                      choices = neighborhood_list$SNA_NAME,
+                      selected = c('Avondale', 'East Price Hill', 'West Price Hill', 'Lower Price Hill'),
+                      label = "Select Neighborhoods",
+                      multiple = TRUE,
+                      options = list(maxItems = 5)
                     )
+                  )
                 )),
               fluidRow(
                 box(title = "Meal Gap",
@@ -154,7 +202,7 @@ server <- function(input,output,session){
       geom_hline(yintercept = 1, linewidth = .5, alpha = .5) +
       geom_bar_interactive(position = position_stack(reverse = TRUE), stat = "identity",
                            aes(fill = source, y = pct_covered, x = date,
-                               data_id = neighborhood,
+                               data_id = source,
                                tooltip = paste0(source, "<br>",
                                                 month_abbr, " ", year, "<br>",
                                                 round(pct_covered*100,1), "%"))) +
@@ -207,6 +255,12 @@ server <- function(input,output,session){
            options = list(opts_hover(css = "stroke-width:5;"),
                           opts_hover_inv(css = "opacity:0.1;"),
                           opts_zoom(max = 5)))
+  })
+
+  guide$init()$start()
+
+  observeEvent(input$guide_btn, {
+    guide$start()
   })
 
 }
