@@ -127,7 +127,7 @@ ui <- dashboardPage(
         icon = icon("utensils")
         )
     ),
-    div(img(src = "logo_temp.png", width = '100%'),
+    div(img(src = "SAFE_logo.png", width = '100%'),
         style = "position: absolute; bottom: 0; left: 0;
         border-radius: 1pt;
         border: 2px solid #FFF;")
