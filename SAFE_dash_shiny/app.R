@@ -8,8 +8,8 @@ library(cicerone)
 #theming
 theme <- create_theme(
   bs4dash_vars(
-    navbar_light_color = CB::cchmc_color(3)[[1]],
-    navbar_light_active_color = CB::cchmc_color(3)[[1]],
+    navbar_light_color = "#f18c3f",
+    navbar_light_active_color = "#f18c3f",
     navbar_light_hover_color = "#FFF",
     card_bg = "#FFF"
   ),
@@ -19,25 +19,27 @@ theme <- create_theme(
     text_light = "black"
   ),
   bs4dash_layout(
-    main_bg = CB::cchmc_color(4)[[1]]
+    main_bg = "#f9cd9e"
   ),
   bs4dash_sidebar_light(
-    bg = CB::cchmc_color(1)[[1]],
-    header_color = CB::cchmc_color(1)[[1]]
+    bg = "#a53437",
+    header_color = "#f18c3f"
   ),
   bs4dash_sidebar_dark(
-    bg = CB::cchmc_color(1)[[1]],
-    header_color = CB::cchmc_color(1)[[1]]
+    bg = "#a53437",
+    header_color = "#f18c3f"
   ),
   bs4dash_status(
-    primary = CB::cchmc_color(2)[[1]],
-    success = CB::cchmc_color(3)[[1]],
-    info = CB::cchmc_color(4)[[1]],
-    light = CB::cchmc_color(1)[[1]],
-    dark = CB::cchmc_color(1)[[1]]
+    primary = "#3c9459",
+    success = "#dc5d61",
+    info = "#9b8172",
+    danger = "#f18c3f",
+    light = "#edaaac",
+    dark = "#edaaac"
   ),
   bs4dash_color(
-    gray_900 = CB::cchmc_color(4)[[1]], white = dht::degauss_colors(4)
+    gray_900 = CB::cchmc_color(4)[[1]],
+    white = dht::degauss_colors(4)
   )
 )
 
@@ -63,7 +65,7 @@ guide <- Cicerone$
   step(
     el = 'mealgap',
     "Meal Gap Plot",
-    "This panel displays the monthly meal gap for the selected neighborhoods. Hover over a line to highlight that neighborhood. Neighborhoods are selected in the above box.",
+    "This panel displays the monthly meal gap for the selected neighborhoods. Hover over a line to highlight that neighborhood. Neighborhoods displayed are the same as those selected in the Meal Coverage Plot above.",
   )$
   step(
     el = "control_wrap",
@@ -74,11 +76,11 @@ guide <- Cicerone$
 
 
 #get neighborhood list
-neighborhood_list <- read_csv('../output/monthly_all_sources_2_.csv') |>
+neighborhood_list <- read_csv('monthly_all_sources_2_.csv') |>
   distinct(SNA_NAME)
 
 ui <- dashboardPage(
-  preloader = list(html = tagList(waiter::spin_refresh(), "Loading ..."), color = CB::cchmc_color(1)[[1]]),
+  preloader = list(html = tagList(waiter::spin_refresh(), "Loading ..."), color = "#edaaac"),
   fullscreen = TRUE,
   freshTheme = theme,
   dark = NULL,
@@ -92,13 +94,13 @@ ui <- dashboardPage(
       id = "title_wrap",
       dashboardBrand(
       title = "SAFE Meal Gap Dashboard",
-      color = "primary")
+      color = "danger")
     ),
     controlbarIcon = div(id = "control_wrap", icon("circle-info"))
   ),
 
   footer = dashboardFooter(
-    left = "SAFE Meal Gap Dashboard"
+    left = "System to Achieve Food Equity (SAFE) Meal Gap Dashboard"
   ),
 
   controlbar = dashboardControlbar(
@@ -110,7 +112,6 @@ ui <- dashboardPage(
         title = "Disclaimers:",
         column(width = 12,
                p("i). We acknowledge that ACS Census data is limited and may not be completely representative of the population in all situations."),
-               p("ii). Second disclaimer"),
                actionButton("guide_btn", "Restart Guide"))
       )
     )
@@ -125,10 +126,17 @@ ui <- dashboardPage(
         tabName = "meal_gap_tab",
         icon = icon("utensils")
         )
-      )
+    ),
+    div(img(src = "logo_temp.png", width = '100%'),
+        style = "position: absolute; bottom: 0; left: 0;
+        border-radius: 1pt;
+        border: 2px solid #FFF;")
   ),
 
     body = dashboardBody(
+
+      tags$head( tags$style(type="text/css", "text {font-family: sans-serif}")),
+
     tabItems(
       tabItem("meal_gap_tab",
               fluidRow(
@@ -136,6 +144,7 @@ ui <- dashboardPage(
                   title = "Meal Coverage",
                   width = 12,
                   status = "primary",
+                  solidHeader = T,
                   girafeOutput('mealcoverage'),
                   sidebar = boxSidebar(
                     startOpen = TRUE,
@@ -155,6 +164,7 @@ ui <- dashboardPage(
                 box(title = "Meal Gap",
                     width = 12,
                     status = "primary",
+                    solidHeader = T,
                     girafeOutput('mealgap'))
               )
       )
@@ -165,7 +175,7 @@ ui <- dashboardPage(
 server <- function(input,output,session){
 
   d <- reactive({
-    dat <- read_csv('../output/monthly_all_sources_2_.csv')
+    dat <- read_csv('monthly_all_sources_3.csv')
 
     temp_d <- dat |>
       filter(SNA_NAME %in% c(input$neighborhood)) |>
@@ -218,6 +228,7 @@ server <- function(input,output,session){
            options = list(opts_hover(css = "stroke-width:5;"),
                           opts_hover_inv(css = "opacity:0.2;"),
                           opts_sizing(rescale = TRUE, width = 1),
+                          opts_selection(type = "none"),
                           opts_zoom(max = 5)))
 
   })
@@ -246,14 +257,15 @@ server <- function(input,output,session){
       labs(x = "", y = "Meal Gap (% Meals Short)", col = "Neighborhood") +
       scale_x_date(date_breaks = "6 months", date_labels = "%b %Y") +
       #ggeasy::easy_move_legend("top") +
-      annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = as.Date("2022-10-01", "%Y-%m-%d"),
+      annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = as.Date("2023-04-01", "%Y-%m-%d"),
                ymin = .06, ymax = 0.0001, fill = "forestgreen", alpha = .2) +
-      annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = as.Date("2022-10-01", "%Y-%m-%d"),
+      annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = as.Date("2023-04-01", "%Y-%m-%d"),
                ymin = -0.0001, ymax = -.40, fill = "firebrick", alpha = .2)
 
     girafe(ggobj = meal_gap_plot, width_svg = 18,
            options = list(opts_hover(css = "stroke-width:5;"),
                           opts_hover_inv(css = "opacity:0.1;"),
+                          opts_selection(type = "none"),
                           opts_zoom(max = 5)))
   })
 
