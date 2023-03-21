@@ -87,7 +87,7 @@ ui <- dashboardPage(
 
   use_cicerone(),
 
-  tags$head( tags$style(type="text/css", "text {font-family: sans-serif}")),
+  tags$head(tags$style(type="text/css", "text {font-family: sans-serif}")),
 
   header = dashboardHeader(
     title = div(
@@ -109,10 +109,17 @@ ui <- dashboardPage(
       id = "controlmenu",
       type = "tabs",
       controlbarItem(
-        title = "Disclaimers:",
+        title = "About SAFE",
         column(width = 12,
-               p("i). We acknowledge that ACS Census data is limited and may not be completely representative of the population in all situations."),
-               actionButton("guide_btn", "Restart Guide"))
+               p("The System to Achieve Food Equity (SAFE) is a sub-network of All Children Thrive made up of individuals and organizations committed to improving food security in Cincinnati to ensure that all children have the food that they need to grow, develop, learn, and thrive. The SAFE Network includes emergency food organizations, healthcare, education, and government institutions, data scientists and families in the Cincinnati area.
+                 The monthly, neighborhood-level meal gap is estimated by harmonzing data about the population, food need, and food supply from the U.S Census Bureau’s American Community Survey, Cincinnati Public School District, non-profit meal providers, Feeding America, and USDA. "),
+               actionButton('safe_btn',
+                            "More Information",
+                            icon = icon("link"),
+                            onclick = "window.open('https://actcincy.org/safe')"),
+               hr(),
+               actionButton("guide_btn", "Restart Guide",
+                            icon = icon('circle-question')))
       )
     )
   ),
@@ -274,7 +281,6 @@ server <- function(input,output,session){
   observeEvent(input$guide_btn, {
     guide$start()
   })
-
 }
 
 shinyApp(ui, server)
