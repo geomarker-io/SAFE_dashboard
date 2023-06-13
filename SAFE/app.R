@@ -182,7 +182,7 @@ ui <- dashboardPage(
 server <- function(input,output,session){
 
   d <- reactive({
-    dat <- read_csv('monthly_all_sources_8may2023.csv')
+    dat <- read_csv('monthly_all_sources_throughMay2023.csv')
 
     temp_d <- dat |>
       filter(SNA_NAME %in% c(input$neighborhood)) |>
@@ -274,9 +274,9 @@ server <- function(input,output,session){
                arrow = arrow(type = "closed", length = unit(.3, "cm"))) +
       coord_cartesian(clip = "off", ylim = c(-.4, .06), xlim = c(as.Date("2018-12-15", "%Y-%m-%d"), as.Date("2023-04-01", "%Y-%m-%d"))) +
       #ggeasy::easy_move_legend("top") +
-      annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = as.Date("2023-04-01", "%Y-%m-%d"),
+      annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = max(d()$date) + lubridate::days(30),
                ymin = .06, ymax = 0.0001, fill = "forestgreen", alpha = .2) +
-      annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = as.Date("2023-04-01", "%Y-%m-%d"),
+      annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = max(d()$date) + lubridate::days(30),
                ymin = -0.0001, ymax = -.40, fill = "firebrick", alpha = .2)
 
     girafe(ggobj = meal_gap_plot, width_svg = 18,
