@@ -195,28 +195,34 @@ server <- function(input,output,session){
     temp_d$date <- as.Date(paste(temp_d$year, temp_d$month, 1, sep = "-"))
 
     temp_d <- temp_d |>
-      pivot_longer(cols = contains('covered'), names_to = 'source', values_to = 'pct_covered') |>
-      filter(source != 'charitable_percent_covered')
+      pivot_longer(cols = contains('covered'), names_to = 'source', values_to = 'pct_covered')
 
     temp_d$source <- factor(temp_d$source, levels = c("meal_percent_income_covered",
                                                    "meal_percent_snap_covered",
                                                    "meal_percent_cps_covered",
                                                    "meal_percent_fsb_covered",
                                                    "meal_percent_lasoupe_covered",
-                                                   "meal_percent_whole_again_covered"),
+                                                   "meal_percent_whole_again_covered",
+                                                   "charitable_percent_covered"),
                             labels = c("Income",
                                        "SNAP",
                                        "CPS",
                                        "Free Store Foodbank",
                                        "La Soupe",
-                                       "Whole Again"))
+                                       "Whole Again",
+                                       "Charitable"))
 
     temp_d
   })
 
   output$mealcoverage <- renderGirafe({
 
-    meal_cover_plot <- ggplot(d()) +
+    d <- d() |>
+      filter(!source %in% c("Free Store Foodbank",
+                            "La Soupe",
+                            "Whole Again"))
+
+    meal_cover_plot <- ggplot(d) +
       geom_hline(yintercept = 1, linewidth = .5, alpha = .5) +
       geom_bar_interactive(position = position_stack(reverse = TRUE), stat = "identity",
                            aes(fill = source, y = pct_covered, x = date,
