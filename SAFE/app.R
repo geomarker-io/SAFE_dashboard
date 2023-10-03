@@ -4,6 +4,7 @@ library(ggiraph)
 library(bs4Dash)
 library(fresh)
 library(cicerone)
+library(leaflet)
 
 #theming
 theme <- create_theme(
@@ -66,6 +67,11 @@ guide <- Cicerone$
     el = 'mealgap',
     "Meal Gap Plot",
     "This panel displays the monthly meal gap for the selected neighborhoods. Hover over a line to highlight that neighborhood. Neighborhoods displayed are the same as those selected in the Meal Coverage Plot above.",
+  )$
+  step(
+    el = 'map_tab_wrap',
+    "Map",
+    "Clicking this tab will bring up a map displaying meal coverage by neighborhood."
   )$
   step(
     el = "control_wrap",
@@ -133,7 +139,14 @@ ui <- dashboardPage(
         text = "Meal Gap",
         tabName = "meal_gap_tab",
         icon = icon("utensils")
-        )
+        ),
+      div(
+        id = 'map_tab_wrap',
+        menuItem(
+        text = "Map",
+        tabName = "map_tab",
+        icon = icon("map")
+      ))
     ),
     div(img(src = "SAFE_logo.png", width = '100%'),
         style = "position: absolute; bottom: 0; left: 0;
@@ -175,6 +188,18 @@ ui <- dashboardPage(
                     solidHeader = T,
                     girafeOutput('mealgap'))
               )
+      ),
+      tabItem(
+        'map_tab',
+          box(
+            title = "Map",
+            width = 12,
+            height = 1000,
+            status = "primary",
+            solidHeader = T,
+            leafletOutput('map',
+                          height = 900)
+        )
       )
     )
   )
@@ -182,8 +207,9 @@ ui <- dashboardPage(
 
 server <- function(input,output,session){
 
+  dat <- read_csv('monthly_all_sources_05sep2023.csv')
+
   d <- reactive({
-    dat <- read_csv('monthly_all_sources_11Aug23.csv')
 
     temp_d <- dat |>
       filter(SNA_NAME %in% c(input$neighborhood)) |>
@@ -258,7 +284,7 @@ server <- function(input,output,session){
         d() |>
         pivot_wider(names_from = 'source', values_from = 'pct_covered') |>
         rowwise() |>
-        mutate(meal_gap = -1 * (1 - sum(Income, SNAP, CPS, `Free Store Foodbank`, `La Soupe`, `Whole Again`))) |>
+        mutate(meal_gap = -1 * (1 - sum(Income, SNAP, CPS, Charitable))) |>
         ungroup()
     })
 
@@ -291,6 +317,68 @@ server <- function(input,output,session){
                           opts_hover_inv(css = "opacity:0.1;"),
                           opts_selection(type = "none"),
                           opts_zoom(max = 5)))
+  })
+
+  output$map <- renderLeaflet({
+
+    d_map <- dat |>
+      dplyr::select(neighborhood = 'SNA_NAME', month, year, contains('covered')) |>
+      mutate(month = as.numeric(month)) |>
+      mutate(month_abbr = month.abb[month]) |>
+      distinct(neighborhood, year, month, .keep_all = T)
+
+    d_map$date <- as.Date(paste(d_map$year, d_map$month, 1, sep = "-"))
+
+    d_map <- d_map |>
+      group_by(neighborhood) |>
+      slice_max(date) |>
+      ungroup()
+
+    d_map <- d_map |>
+      pivot_longer(cols = contains('covered'), names_to = 'source', values_to = 'pct_covered')
+
+    d_map$source <- factor(d_map$source, levels = c("meal_percent_income_covered",
+                                                      "meal_percent_snap_covered",
+                                                      "meal_percent_cps_covered",
+                                                      "meal_percent_fsb_covered",
+                                                      "meal_percent_lasoupe_covered",
+                                                      "meal_percent_whole_again_covered",
+                                                      "charitable_percent_covered"),
+                            labels = c("Income",
+                                       "SNAP",
+                                       "CPS",
+                                       "Free Store Foodbank",
+                                       "La Soupe",
+                                       "Whole Again",
+                                       "Charitable"))
+
+    d_map <- d_map |>
+      pivot_wider(names_from = 'source', values_from = 'pct_covered') |>
+      rowwise() |>
+      mutate(meal_coverage = sum(Income, SNAP, CPS, Charitable)*100) |>
+      ungroup()
+
+    d_map_final <- d_map |>
+      left_join(cincy::neigh_sna, by = c("neighborhood" = "neighborhood")) |>
+      sf::st_as_sf() |>
+      sf::st_transform(crs = 4326)
+
+    d_map_final <- d_map_final |>
+      mutate(lab = paste(neighborhood, "<br>",
+                           "Meal coverage: ", round(meal_coverage,2),"%", sep = ""))
+
+    pal <- colorNumeric(palette = "Blues", domain = d_map_final$meal_coverage)
+
+    map <- leaflet(d_map_final) |>
+      setView(-84.55, 39.18, zoom = 11.5) |>
+      addProviderTiles(provider = providers$CartoDB.Positron) |>
+      addPolygons(fillColor = ~pal(meal_coverage), fillOpacity = 0.85, stroke = T,
+                  label = ~lapply(d_map_final$lab, HTML),
+                  weight = .5, color = "#333333")
+
+    map
+
+
   })
 
   guide$init()$start()
