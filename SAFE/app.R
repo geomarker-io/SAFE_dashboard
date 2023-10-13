@@ -5,6 +5,7 @@ library(bs4Dash)
 library(fresh)
 library(cicerone)
 library(leaflet)
+library(leafpop)
 
 #theming
 theme <- create_theme(
@@ -376,19 +377,19 @@ server <- function(input,output,session){
         ggsci::scale_fill_jama() +
         labs(x = "", y = "Meal Coverage (% Meals Covered)", fill = "Meal Source") +
         scale_y_continuous(labels = scales::percent) +
-        scale_x_date(date_labels = "%b %Y") +
-        ggeasy::easy_rotate_x_labels(angle = -60)
+        scale_x_date(date_labels = "%b %Y")
     }
 
-    d_map_final_2 <- d_map |>
+    d_map_plots <- d_map |>
       group_nest(neighborhood) |>
       mutate(plot = map(data, neighborhood_plot))
 
-   d_map_final_2$plot[2]
+    d_map_final <- d_map_final |>
+      left_join(d_map_plots, by = 'neighborhood')
 
-    # d_map_final <- d_map_final |>
-    #   mutate(lab = paste(neighborhood, "<br>",
-    #                        "Meal coverage: ", round(meal_coverage,2),"%", sep = ""))
+     d_map_final <- d_map_final |>
+       mutate(lab = paste(neighborhood, "<br>",
+                            "Meal coverage: ", round(meal_coverage,2),"%", sep = ""))
 
     pal <- colorNumeric(palette = "Blues", domain = d_map_final$meal_coverage)
 
@@ -397,7 +398,10 @@ server <- function(input,output,session){
       addProviderTiles(provider = providers$CartoDB.Positron) |>
       addPolygons(fillColor = ~pal(meal_coverage), fillOpacity = 0.85, stroke = T,
                   label = ~lapply(d_map_final$lab, HTML),
-                  weight = .5, color = "#333333")
+                  weight = .5, color = "#333333",
+                  group = "neighborhood",
+                  popup = popupGraph(d_map_final$plot)
+                  )
 
     map
 
