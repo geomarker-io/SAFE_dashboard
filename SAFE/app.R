@@ -352,20 +352,43 @@ server <- function(input,output,session){
                                        "Whole Again",
                                        "Charitable"))
 
-    d_map <- d_map |>
+    d_map_wide <- d_map |>
       pivot_wider(names_from = 'source', values_from = 'pct_covered') |>
       rowwise() |>
       mutate(meal_coverage = sum(Income, SNAP, CPS, Charitable)*100) |>
       ungroup()
 
-    d_map_final <- d_map |>
+    d_map_final <- d_map_wide |>
       left_join(cincy::neigh_sna, by = c("neighborhood" = "neighborhood")) |>
       sf::st_as_sf() |>
       sf::st_transform(crs = 4326)
 
-    d_map_final <- d_map_final |>
-      mutate(lab = paste(neighborhood, "<br>",
-                           "Meal coverage: ", round(meal_coverage,2),"%", sep = ""))
+    neighborhood_plot <- function(d){
+      d |>
+        filter(!source %in% c("Free Store Foodbank",
+                              "La Soupe",
+                              "Whole Again")) |>
+        ggplot() +
+        geom_bar(position = position_stack(reverse = TRUE), stat = "identity",
+                             aes(fill = source, y = pct_covered, x = date)) +
+        geom_hline(yintercept = 1, linewidth = .8, alpha = .5) +
+        theme_minimal() +
+        ggsci::scale_fill_jama() +
+        labs(x = "", y = "Meal Coverage (% Meals Covered)", fill = "Meal Source") +
+        scale_y_continuous(labels = scales::percent) +
+        scale_x_date(date_labels = "%b %Y") +
+        ggeasy::easy_rotate_x_labels(angle = -60)
+    }
+
+    d_map_final_2 <- d_map |>
+      group_nest(neighborhood) |>
+      mutate(plot = map(data, neighborhood_plot))
+
+   d_map_final_2$plot[2]
+
+    # d_map_final <- d_map_final |>
+    #   mutate(lab = paste(neighborhood, "<br>",
+    #                        "Meal coverage: ", round(meal_coverage,2),"%", sep = ""))
 
     pal <- colorNumeric(palette = "Blues", domain = d_map_final$meal_coverage)
 
