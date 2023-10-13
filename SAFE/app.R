@@ -6,6 +6,7 @@ library(fresh)
 library(cicerone)
 library(leaflet)
 library(leafpop)
+library(waiter)
 
 #theming
 theme <- create_theme(
@@ -91,6 +92,8 @@ ui <- dashboardPage(
   fullscreen = TRUE,
   freshTheme = theme,
   dark = NULL,
+
+  #use_waiter(),
 
   use_cicerone(),
 
@@ -208,6 +211,10 @@ ui <- dashboardPage(
 
 server <- function(input,output,session){
 
+  w <- Waiter$new(id = c("map"),
+                  html = spin_3(),
+                  color = transparent(.5))
+
   dat <- read_csv('monthly_all_sources_05sep2023.csv')
 
   d <- reactive({
@@ -321,6 +328,8 @@ server <- function(input,output,session){
   })
 
   output$map <- renderLeaflet({
+
+    w$show()
 
     d_map <- dat |>
       dplyr::select(neighborhood = 'SNA_NAME', month, year, contains('covered')) |>
