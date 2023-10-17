@@ -165,7 +165,8 @@ ui <- dashboardPage(
                       label = "Select Neighborhoods",
                       multiple = TRUE,
                       options = list(maxItems = 5)
-                    )
+                    ),
+                    downloadButton('download_coverage', HTML("Download Meal Coverage Data"))
                   )
                 )),
               fluidRow(
@@ -173,7 +174,13 @@ ui <- dashboardPage(
                     width = 12,
                     status = "primary",
                     solidHeader = T,
-                    girafeOutput('mealgap'))
+                    girafeOutput('mealgap'),
+                    sidebar = boxSidebar(
+                      id = 'gapsidebar',
+                      width = 33,
+                      downloadButton('download_gap', HTML("Download Meal Gap Data"))
+                    )
+                )
               )
       )
     )
@@ -298,6 +305,35 @@ server <- function(input,output,session){
   observeEvent(input$guide_btn, {
     guide$start()
   })
+
+  output$download_coverage <- downloadHandler(
+
+    filename = function() {
+      paste("SAFE_meal_coverage_", Sys.Date(), ".csv", sep = "")
+    },
+    content = function(file) {
+      write.csv(d(), file, row.names = FALSE)
+    }
+  )
+
+  d_gap <- reactive({
+    d() |>
+      pivot_wider(names_from = 'source', values_from = 'pct_covered') |>
+      rowwise() |>
+      mutate(meal_gap = -1 * (1 - sum(Income, SNAP, CPS, `Free Store Foodbank`, `La Soupe`, `Whole Again`))) |>
+      ungroup()
+  })
+
+  output$download_gap <- downloadHandler(
+
+    filename = function() {
+      paste("SAFE_meal_gap_", Sys.Date(), ".csv", sep = "")
+    },
+    content = function(file) {
+      write.csv(d_gap(), file, row.names = FALSE)
+    }
+  )
+
 }
 
 shinyApp(ui, server)
