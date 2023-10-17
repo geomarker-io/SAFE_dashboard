@@ -410,7 +410,12 @@ server <- function(input,output,session){
                   weight = .5, color = "#333333",
                   group = "neighborhood",
                   popup = popupGraph(d_map_final$plot)
-                  )
+                  ) |>
+      addLegend("topright",
+                pal = pal,
+                values = ~meal_coverage,
+                title = "Percent Meals Covered",
+                labFormat = labelFormat(suffix = "%"))
 
     map
 
