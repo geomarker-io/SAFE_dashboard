@@ -59,13 +59,18 @@ guide <- Cicerone$
   step(
     el = 'coversidebar',
     "Select Neighborhoods",
-    "Click this button to add/remove neighborhoods from both plots",
+    "Click this button to add/remove neighborhoods from both plots or download the data for the selected neighborhoods",
     position = "left"
     )$
   step(
     el = 'mealgap',
     "Meal Gap Plot",
     "This panel displays the monthly meal gap for the selected neighborhoods. Hover over a line to highlight that neighborhood. Neighborhoods displayed are the same as those selected in the Meal Coverage Plot above.",
+  )$
+  step(
+    el = 'gapsidebar',
+    'Download Data',
+    'Click here to open an option to download the data for the selected neighborhoods'
   )$
   step(
     el = "control_wrap",
@@ -348,6 +353,7 @@ server <- function(input,output,session){
       modalDialog(
         title = "How Meal Coverage is Calculated",
         div(img(src = "safe_meal_coverage_calc.png", width = '100%')),
+        p(strong("Conversion Factors:"), "One 'meal' is equivalent to X pounds of food or $X"),
         easyClose = TRUE,
         size = "xl"
       )
