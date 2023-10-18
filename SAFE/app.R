@@ -106,6 +106,15 @@ ui <- dashboardPage(
       title = "SAFE Meal Gap Dashboard",
       color = "danger")
     ),
+    shinyWidgets::actionBttn('equation_modal',
+               style = "jelly",
+               #color = "primary",
+               label = "About the meal coverage calculation",
+               size = 's',
+               block = FALSE,
+               icon = icon("question-circle")) |>
+      tagAppendAttributes(style = "color: #3c9459; background-color: #FFFFFF"),
+
     controlbarIcon = div(id = "control_wrap", icon("circle-info"))
   ),
 
@@ -427,6 +436,18 @@ server <- function(input,output,session){
   observeEvent(input$guide_btn, {
     guide$start()
   })
+
+  observeEvent(input$equation_modal, {
+    showModal(
+      modalDialog(
+        title = "How Meal Coverage is Calculated",
+        div(img(src = "safe_meal_coverage_calc.png", width = '100%')),
+        easyClose = TRUE,
+        size = "xl"
+      )
+    )
+  })
+
 }
 
 shinyApp(ui, server)
