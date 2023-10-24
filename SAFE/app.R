@@ -320,22 +320,31 @@ server <- function(input,output,session){
     guide$start()
   })
 
+  d_cover_down <- reactive({
+    d() |>
+      filter(!source %in% c("Free Store Foodbank",
+                            "La Soupe",
+                            "Whole Again"))
+
+  })
+
   output$download_coverage <- downloadHandler(
 
     filename = function() {
       paste("SAFE_meal_coverage_", Sys.Date(), ".csv", sep = "")
     },
     content = function(file) {
-      write.csv(d(), file, row.names = FALSE)
+      write.csv(d_cover_down(), file, row.names = FALSE)
     }
   )
 
-  d_gap <- reactive({
+  d_gap_down <- reactive({
     d() |>
       pivot_wider(names_from = 'source', values_from = 'pct_covered') |>
       rowwise() |>
       mutate(meal_gap = -1 * (1 - sum(Income, SNAP, CPS, `Free Store Foodbank`, `La Soupe`, `Whole Again`))) |>
-      ungroup()
+      ungroup() |>
+      select(-c(`Free Store Foodbank`, `La Soupe`, `Whole Again`))
   })
 
   output$download_gap <- downloadHandler(
@@ -344,7 +353,7 @@ server <- function(input,output,session){
       paste("SAFE_meal_gap_", Sys.Date(), ".csv", sep = "")
     },
     content = function(file) {
-      write.csv(d_gap(), file, row.names = FALSE)
+      write.csv(d_gap_down(), file, row.names = FALSE)
     }
   )
 
