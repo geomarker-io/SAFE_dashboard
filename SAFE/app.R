@@ -442,6 +442,7 @@ server <- function(input,output,session){
       modalDialog(
         title = "How Meal Coverage is Calculated",
         div(img(src = "safe_meal_coverage_calc.png", width = '100%')),
+        p(strong("Conversion Factors:"), "One 'meal' is equivalent to", strong("1.2"), "pounds of food or", strong("$3.89")),
         easyClose = TRUE,
         size = "xl"
       )
