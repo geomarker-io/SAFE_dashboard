@@ -416,7 +416,7 @@ server <- function(input,output,session){
                             "Meal coverage: ", round(meal_coverage,2),"%", sep = ""))
 
 
-    pal <- colorNumeric(palette = c("#a53437", "#f9cd9e"), domain = c(min(d_map_final$meal_coverage), 106), na.color = "#ffdbb9")
+    pal <- colorNumeric(palette = c("#a53437", "#f9cd9e"), domain = c(min(d_map_final$meal_coverage), 110), na.color = "#ffdbb9")
 
     map <- leaflet(d_map_final) |>
       setView(-84.55, 39.18, zoom = 11.5) |>
@@ -429,7 +429,8 @@ server <- function(input,output,session){
                   ) |>
       addLegend("topright",
                 pal = pal,
-                values = ~meal_coverage,
+                values = ~c(min(d_map_final$meal_coverage), 110),
+                na.label = ">110%",
                 title = "Percent Meals Covered",
                 labFormat = labelFormat(suffix = "%"))
 
