@@ -279,14 +279,14 @@ server <- function(input,output,session){
       theme_minimal() +
       ggsci::scale_fill_jama() +
       labs(x = "", y = "Meal Coverage (% Meals Covered)", fill = "Meal Source") +
-      scale_y_continuous(labels = scales::percent) +
+      scale_y_continuous(labels = scales::percent, breaks = c(.25, .5, .75, 1, 1.2)) +
       scale_x_date(date_breaks = "6 months", date_labels = "%b %Y") +
       ggeasy::easy_rotate_x_labels(angle = -60) +
-      annotate("segment", x = max(d()$date) + lubridate::days(30), xend = max(d()$date) + lubridate::days(30),
+      annotate("segment", x = max(d()$date) + lubridate::days(40), xend = max(d()$date) + lubridate::days(40),
                y = .90, yend = 1.00,
                color = "#3c9459", linewidth = 1,
                arrow = arrow(type = "closed", length = unit(.3, "cm"))) +
-      coord_cartesian(clip = "off", ylim = c(0, 1)) +
+      coord_cartesian(clip = "off", ylim = c(0, 1.2)) +
       facet_wrap(~neighborhood, nrow = 1)
 
     girafe(ggobj = meal_cover_plot, width_svg = ifelse(length(input$neighborhood) == 5, 24, 18),
@@ -320,15 +320,15 @@ server <- function(input,output,session){
       theme_minimal() +
       ggsci::scale_color_aaas() +
       labs(x = "", y = "Meal Gap (% Meals Short)", col = "Neighborhood") +
-      scale_x_date(date_breaks = "6 months", date_labels = "%b %Y") +
+      scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
       annotate("segment", x = max(d()$date) + lubridate::days(30), xend = max(d()$date) + lubridate::days(30),
                y = 0, yend = .06,
                color = "#3c9459", linewidth = 1,
                arrow = arrow(type = "closed", length = unit(.3, "cm"))) +
-      coord_cartesian(clip = "off", ylim = c(-.4, .06), xlim = c(as.Date("2018-12-15", "%Y-%m-%d"), max(d()$date))) + #as.Date("2023-08-01", "%Y-%m-%d")
+      coord_cartesian(clip = "off", ylim = c(-.4, .2), xlim = c(as.Date("2018-12-15", "%Y-%m-%d"), max(d()$date))) + #as.Date("2023-08-01", "%Y-%m-%d")
       #ggeasy::easy_move_legend("top") +
       annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = max(d()$date) + lubridate::days(30),
-               ymin = .06, ymax = 0.0001, fill = "forestgreen", alpha = .2) +
+               ymin = .2, ymax = 0.0001, fill = "forestgreen", alpha = .2) +
       annotate("rect", xmin = as.Date("2018-12-15", "%Y-%m-%d"), xmax = max(d()$date) + lubridate::days(30),
                ymin = -0.0001, ymax = -.40, fill = "firebrick", alpha = .2)
 
