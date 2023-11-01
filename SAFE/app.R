@@ -224,7 +224,7 @@ server <- function(input,output,session){
                   html = spin_3(),
                   color = transparent(.5))
 
-  dat <- read_csv('monthly_all_sources_05sep2023.csv')
+  dat <- read_csv('monthly_all_sources_27Oct2023.csv')
 
   d <- reactive({
 
@@ -246,6 +246,7 @@ server <- function(input,output,session){
                                                    "meal_percent_fsb_covered",
                                                    "meal_percent_lasoupe_covered",
                                                    "meal_percent_whole_again_covered",
+                                                   "meal_percent_cfs_covered",
                                                    "charitable_percent_covered"),
                             labels = c("Income",
                                        "SNAP",
@@ -253,6 +254,7 @@ server <- function(input,output,session){
                                        "Free Store Foodbank",
                                        "La Soupe",
                                        "Whole Again",
+                                       "Childhood Food Solutions",
                                        "Charitable"))
 
     temp_d
@@ -263,7 +265,8 @@ server <- function(input,output,session){
     d <- d() |>
       filter(!source %in% c("Free Store Foodbank",
                             "La Soupe",
-                            "Whole Again"))
+                            "Whole Again",
+                            "Childhood Food Solutions"))
 
     meal_cover_plot <- ggplot(d) +
       geom_hline(yintercept = 1, linewidth = .5, alpha = .5) +
@@ -362,6 +365,7 @@ server <- function(input,output,session){
                                                       "meal_percent_fsb_covered",
                                                       "meal_percent_lasoupe_covered",
                                                       "meal_percent_whole_again_covered",
+                                                      "meal_percent_cfs_covered",
                                                       "charitable_percent_covered"),
                             labels = c("Income",
                                        "SNAP",
@@ -369,6 +373,7 @@ server <- function(input,output,session){
                                        "Free Store Foodbank",
                                        "La Soupe",
                                        "Whole Again",
+                                       "Childhood Food Solutions",
                                        "Charitable"))
 
     d_map_wide <- d_map |>
@@ -386,7 +391,8 @@ server <- function(input,output,session){
       d |>
         filter(!source %in% c("Free Store Foodbank",
                               "La Soupe",
-                              "Whole Again")) |>
+                              "Whole Again",
+                              "Childhood Food Solutions")) |>
         ggplot() +
         geom_bar(position = position_stack(reverse = TRUE), stat = "identity",
                              aes(fill = source, y = pct_covered, x = date)) +
