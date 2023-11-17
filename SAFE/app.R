@@ -159,7 +159,14 @@ ui <- dashboardPage(
         text = "Map",
         tabName = "map_tab",
         icon = icon("map")
-      ))
+      )),
+      div(
+        id = 'food_resources_tab_wrap',
+        menuItem(
+          text = "Food Resources",
+          tabName = "food_resources_tab",
+          icon = icon("location-dot")
+        ))
     ),
     div(img(src = "SAFE_logo.png", width = '100%'),
         style = "position: absolute; bottom: 0; left: 0;
@@ -213,6 +220,10 @@ ui <- dashboardPage(
             leafletOutput('map',
                           height = 900)
         )
+      ),
+      tabItem(
+        'food_resources_tab',
+        htmlOutput('google_map')
       )
     )
   )
@@ -437,6 +448,12 @@ server <- function(input,output,session){
     map
 
 
+  })
+
+  output$google_map <- renderUI({
+    tags$iframe(src = "https://www.google.com/maps/d/embed?mid=1dbsRkaXhY8RqLl8m1VNUnaHxVGb0RweH&ehbc=2E312F",
+                width = "100%",
+                height = '1200')
   })
 
   guide$init()$start()
