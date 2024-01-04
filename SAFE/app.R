@@ -120,7 +120,7 @@ ui <- dashboardPage(
 
   footer = dashboardFooter(
     left = "System to Achieve Food Equity (SAFE) Meal Gap Dashboard",
-    right = glue::glue("Data updated on ", format(Sys.Date(), "%m/%d/%Y"))
+    right = glue::glue("Data updated on ", format(as.Date(file.info("app.R")$mtime), "%m/%d/%Y"))
   ),
 
   controlbar = dashboardControlbar(
@@ -235,7 +235,7 @@ server <- function(input,output,session){
                   html = spin_3(),
                   color = transparent(.5))
 
-  dat <- read_csv('monthly_all_sources_03Jan2024.csv')
+  dat <- read_csv('monthly_all_sources_03Jan2024_sum_charity.csv')
 
   d <- reactive({
 
