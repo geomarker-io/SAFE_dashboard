@@ -3,15 +3,11 @@
   "locale": "en_US",
   "platform": "4.2.2",
   "metadata": {
-    "appmode": "quarto-static",
-    "primary_rmd": "cincy_mealgap.qmd",
+    "appmode": "shiny",
+    "primary_rmd": null,
     "primary_html": null,
     "content_category": null,
     "has_parameters": false
-  },
-  "quarto": {
-    "version": "1.3.450",
-    "engines": ["knitr"]
   },
   "packages": {
     "BH": {
@@ -4449,6 +4445,9 @@
     }
   },
   "files": {
+    "app.R": {
+      "checksum": "edeb977e011b95bf9030246596c29813"
+    },
     "cincy_mealgap_files/libs/bootstrap/bootstrap-icons.css": {
       "checksum": "3104c106b6c22560ae274d7c56f116c5"
     },
@@ -4523,9 +4522,6 @@
     },
     "README.md": {
       "checksum": "1a4dfbb60413058548beced25a1f229f"
-    },
-    "SAFE/app.R": {
-      "checksum": "edeb977e011b95bf9030246596c29813"
     },
     "SAFE/www/SAFE_logo.png": {
       "checksum": "56b3b6eaa21c36fbe72d95818a7d7ee7"
