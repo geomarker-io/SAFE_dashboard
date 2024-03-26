@@ -235,15 +235,16 @@ server <- function(input,output,session){
                   html = spin_3(),
                   color = transparent(.5))
 
-  dat <- read_csv('monthly_all_sources_14mar2024_.csv') |>
-    rowwise() |>
-    mutate(charitable_percent_covered = sum(
-      meal_percent_fsb_covered,
-      meal_percent_lasoupe_covered,
-      meal_percent_whole_again_covered,
-      meal_percent_cfs_covered
-    )) |>
-    ungroup()
+  dat <- read_csv('monthly_all_sources_14mar2024_.csv') |> 
+      rowwise() |> 
+      mutate(charitable_percent_covered = sum(
+          meal_percent_fsb_covered,
+          meal_percent_lasoupe_covered,
+          meal_percent_whole_again_covered,
+          meal_percent_cfs_covered
+      )) |> 
+      ungroup()
+
 
   d <- reactive({
 
