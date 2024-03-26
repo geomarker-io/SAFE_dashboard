@@ -245,6 +245,7 @@ server <- function(input,output,session){
       )) |> 
       ungroup()
 
+
   d <- reactive({
 
     temp_d <- dat |>
